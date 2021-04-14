@@ -29,7 +29,8 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                     {
                         services.AddSingleton(sp => new ActivitySource("test"));
                         services.AddTransient<KafkaConsumer>();
-                        services.AddSingleton(sp => new KafkaConsumerMessageTypes(new[] { typeof(object) }));
+                        services.AddTransient<KafkaProducer>();
+                        services.AddSingleton(sp => new KafkaConsumerMessageTypes(new[] { typeof(Sample) }));
                         services.AddSingleton(sp => new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)));
                     })
                     .Build();
@@ -65,6 +66,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             }
 
             var consumer = host.Services.GetRequiredService<KafkaConsumer>();
+            var producer = host.Services.GetRequiredService<KafkaProducer>();
 
             var channel = Channel.CreateUnbounded<Sample>();
 
@@ -80,8 +82,20 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                 }
             });
 
-            var cts = new CancellationTokenSource(2.Seconds());
+            await producer.SendAsync(new Sample
+            {
+                Body = "Hello",
+                ID = "1"
+            }, topicName);
+
+            var cts = new CancellationTokenSource(5.Seconds());
             var value = await channel.Reader.ReadAsync(cts.Token);
+
+            value.Should().Be(new Sample
+            {
+                Body = "Hello",
+                ID = "1"
+            });
 
             await host.StopAsync();
         }
