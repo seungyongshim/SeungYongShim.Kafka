@@ -12,8 +12,10 @@ using SeungYongShim.Kafka.DependencyInjection.Abstractions;
 
 namespace SeungYongShim.Kafka.DependencyInjection
 {
-    public class KafkaConsumer
+    public class KafkaConsumer : IDisposable
     {
+        private bool disposedValue;
+
         public KafkaConsumer(ActivitySource activitySource, KafkaConfig kafkaConfig, KafkaConsumerMessageTypes kafkaConsumerMessageTypes, ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
@@ -61,7 +63,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
 
                     try
                     {
-                        while (true)
+                        while (!cancellationToken.IsCancellationRequested)
                         {
                             try
                             {
@@ -87,7 +89,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
                                     }
                                     catch (KafkaException e)
                                     {
-                                        Console.WriteLine($"Commit error: {e.Error.Reason}");
+                                        Logger.LogError($"Commit error: {e.Error.Reason}");
                                     }
                                     finally
                                     {
@@ -116,6 +118,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
                     finally
                     {
                         consumer.Close();
+                        KafkaConsumerThread = null;
                     }
                 }
             });
@@ -123,9 +126,27 @@ namespace SeungYongShim.Kafka.DependencyInjection
             KafkaConsumerThread.Start();
         }
 
-        public void Stop()
+        public void Stop() => CancellationTokenSource.Cancel();
+
+        protected virtual void Dispose(bool disposing)
         {
-            CancellationTokenSource.Cancel();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    Stop();
+                    KafkaConsumerThread.Join(TimeSpan.FromSeconds(5));
+                }
+
+                KafkaConsumerThread = null;
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
