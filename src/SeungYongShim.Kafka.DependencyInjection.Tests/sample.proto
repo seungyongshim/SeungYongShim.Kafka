@@ -2,5 +2,5 @@ syntax = "proto3";
 
 message Sample {
    string ID = 1;
-   string Body = 2;
+   repeated string Body = 2;
 }

@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -10,8 +8,10 @@ using Microsoft.Extensions.Logging;
 
 namespace SeungYongShim.Kafka.DependencyInjection
 {
-    public class KafkaProducer
+    public class KafkaProducer : IDisposable
     {
+        private bool disposedValue;
+
         public KafkaProducer(ActivitySource activitySource, KafkaConfig kafkaConfig, ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
@@ -28,34 +28,59 @@ namespace SeungYongShim.Kafka.DependencyInjection
         }
 
         public async Task SendAsync(IMessage m, string topic, string key = "1")
+        {
+            try
             {
-                try
-                {
-                    using var activity = ActivitySource.StartActivity("kafka", ActivityKind.Producer);
-                    activity?.AddTag("topic", topic);
+                using var activity = ActivitySource.StartActivity("kafka", ActivityKind.Producer);
 
-                    var ret = await Producer.ProduceAsync(topic, new Message<string, string>
-                    {
-                        Key = key,
-                        Headers = new Headers { new Header("ClrType",
+                var message = JsonFormatter.ToDiagnosticString(m);
+
+                var ret = await Producer.ProduceAsync(topic, new Message<string, string>
+                {
+                    Key = key,
+                    Headers = new Headers { new Header("ClrType",
                                                            Encoding.UTF8.GetBytes(m.Descriptor.ClrType.ToString())),
                                                 new Header("ActivityID",
                                                            Encoding.UTF8.GetBytes(Activity.Current?.Id ?? string.Empty))},
-                        Value = JsonFormatter.ToDiagnosticString(m)
-                    });
-    }
-                catch (Exception ex)
-                {
-                    _log.LogWarning(ex, "");
-                }
-            }
+                    Value = message
+                });
 
-public ActivitySource ActivitySource { get; }
+                activity?.AddTag("topic", topic);
+                activity?.AddTag("message", message);
+
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "");
+            }
+        }
+
+        public ActivitySource ActivitySource { get; }
 
         private ILogger<KafkaConsumer> _log { get; }
 
         public KafkaConfig KafkaConfig { get; }
 
         private IProducer<string, string> Producer { get; }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    Producer?.Dispose();
+
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

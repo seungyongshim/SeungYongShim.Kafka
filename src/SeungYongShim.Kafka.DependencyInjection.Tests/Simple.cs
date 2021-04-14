@@ -84,18 +84,18 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             await producer.SendAsync(new Sample
             {
-                Body = "Hello",
+                
                 ID = "1"
-            }, topicName);
+            }.AddBody(new[] { "Hello", "World" }), topicName);
 
             var cts = new CancellationTokenSource(15.Seconds());
             var value = await channel.Reader.ReadAsync(cts.Token);
 
             value.Should().Be(new Sample
             {
-                Body = "Hello",
+
                 ID = "1"
-            });
+            }.AddBody(new[] { "Hello", "World" }));
 
             await host.StopAsync();
         }

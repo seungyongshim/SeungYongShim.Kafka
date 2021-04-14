@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SeungYongShim.Kafka.Depende
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeungYongShim.Kafka.DependencyInjection.Abstractions", "SeungYongShim.Kafka.DependencyInjection.Abstractions\SeungYongShim.Kafka.DependencyInjection.Abstractions.csproj", "{F5A33754-DAF5-41C9-A716-9680B7AE58A0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2AA5B953-B110-4263-8F4E-778B86C3BDE3}"
+	ProjectSection(SolutionItems) = preProject
+		common.props = common.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
