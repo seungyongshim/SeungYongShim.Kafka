@@ -35,7 +35,7 @@ jobs:
         dotnet clean 	        
         dotnet restore	      
         dotnet test --logger "junit;LogFileName=Report.xml"
-        dotnet test /p:AltCover=true /p:AltCoverXmlreport="../altcover.xml" /p:AltCoverAssemblyExcludeFilter='(xunit.*)|(System.*)|(.*Tests)'
+        dotnet test /p:AltCover=true /p:AltCoverReport="../altcover.xml" /p:AltCoverAssemblyExcludeFilter='(xunit.*)|(System.*)|(.*Tests)'
     - name: ReportGenerator
       uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
       with:
