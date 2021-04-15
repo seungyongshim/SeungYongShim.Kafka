@@ -7,9 +7,9 @@ using Google.Protobuf;
 
 namespace SeungYongShim.Kafka.DependencyInjection
 {
-    public class KafkaConsumerMessageTypes
+    public class KafkaProtobufMessageTypes
     {
-        public KafkaConsumerMessageTypes(IList<Type> types)
+        public KafkaProtobufMessageTypes(IEnumerable<Type> types)
         {
             GetTypeAll = (from t in types
                           let assembly = Assembly.GetAssembly(t)

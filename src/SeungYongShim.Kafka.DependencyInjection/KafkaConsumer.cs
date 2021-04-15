@@ -5,9 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Confluent.Kafka;
-using Google.Protobuf;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using SeungYongShim.Kafka.DependencyInjection.Abstractions;
 
 namespace SeungYongShim.Kafka.DependencyInjection
@@ -16,7 +14,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
     {
         private bool disposedValue;
 
-        public KafkaConsumer(ActivitySource activitySource, KafkaConfig kafkaConfig, KafkaConsumerMessageTypes kafkaConsumerMessageTypes, ILogger<KafkaConsumer> logger)
+        public KafkaConsumer(ActivitySource activitySource, KafkaConfig kafkaConfig, KafkaProtobufMessageTypes kafkaConsumerMessageTypes, ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
             Logger = logger;
@@ -27,7 +25,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
         public ActivitySource ActivitySource { get; }
         public ILogger<KafkaConsumer> Logger { get; }
         public KafkaConfig KafkaConfig { get; }
-        public KafkaConsumerMessageTypes KafkaConsumerMessageTypes { get; }
+        public KafkaProtobufMessageTypes KafkaConsumerMessageTypes { get; }
 
         public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
         public Thread KafkaConsumerThread { get; private set; }
@@ -75,7 +73,7 @@ namespace SeungYongShim.Kafka.DependencyInjection
                                 var typeName = Encoding.Default.GetString(clrType);
                                 var messageType = KafkaConsumerMessageTypes.GetTypeAll[typeName];
                                 var parser = KafkaConsumerMessageTypes.GetParserAll[typeName];
-                                var o =   parser.ParseJson(consumeResult.Message.Value);
+                                var o = parser.ParseJson(consumeResult.Message.Value);
                                 var type = typeof(Commitable<>).MakeGenericType(messageType);
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
@@ -103,7 +101,6 @@ namespace SeungYongShim.Kafka.DependencyInjection
 
                                 slim.Wait(timeout, cancellationToken);
                                 slim.Reset();
-
                             }
                             catch (ConsumeException e)
                             {

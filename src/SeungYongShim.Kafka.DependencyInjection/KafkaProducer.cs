@@ -15,8 +15,8 @@ namespace SeungYongShim.Kafka.DependencyInjection
         public KafkaProducer(ActivitySource activitySource, KafkaConfig kafkaConfig, ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
-            _log = logger;
             KafkaConfig = kafkaConfig;
+            _log = logger;
 
             var config = new ProducerConfig
             {
@@ -38,20 +38,18 @@ namespace SeungYongShim.Kafka.DependencyInjection
                 var ret = await Producer.ProduceAsync(topic, new Message<string, string>
                 {
                     Key = key,
-                    Headers = new Headers { new Header("ClrType",
-                                                           Encoding.UTF8.GetBytes(m.Descriptor.ClrType.ToString())),
-                                                new Header("ActivityID",
-                                                           Encoding.UTF8.GetBytes(Activity.Current?.Id ?? string.Empty))},
+                    Headers = new Headers { new Header("ClrType", Encoding.UTF8.GetBytes(m.Descriptor.ClrType.ToString())),
+                                            new Header("ActivityID", Encoding.UTF8.GetBytes(Activity.Current?.Id ?? string.Empty))},
                     Value = message
                 });
 
                 activity?.AddTag("topic", topic);
                 activity?.AddTag("message", message);
-
             }
             catch (Exception ex)
             {
                 _log.LogWarning(ex, "");
+                throw;
             }
         }
 

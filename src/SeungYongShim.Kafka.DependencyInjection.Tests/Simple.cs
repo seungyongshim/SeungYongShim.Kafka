@@ -25,14 +25,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             // arrange
             using var host =
                 Host.CreateDefaultBuilder()
-                    .ConfigureServices(services =>
-                    {
-                        services.AddSingleton(sp => new ActivitySource("test"));
-                        services.AddTransient<KafkaConsumer>();
-                        services.AddTransient<KafkaProducer>();
-                        services.AddSingleton(sp => new KafkaConsumerMessageTypes(new[] { typeof(Sample) }));
-                        services.AddSingleton(sp => new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)));
-                    })
+                    .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)), typeof(Sample))
                     .Build();
 
             await host.StartAsync();
