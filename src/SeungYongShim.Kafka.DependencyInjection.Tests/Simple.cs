@@ -17,7 +17,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
     public class KafkaSpec
     {
         [Fact]
-        public async void Simple()
+        public async Task Simple()
         {
             var bootstrapServers = "localhost:9092";
             var topicName = "kafka.spec.simple.test";
