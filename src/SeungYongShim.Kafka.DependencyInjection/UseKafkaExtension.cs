@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using SeungYongShim.Kafka.DependencyInjection;
+using SeungYongShim.Kafka;
 
 namespace Microsoft.Extensions.Hosting
 {
@@ -21,6 +17,5 @@ namespace Microsoft.Extensions.Hosting
 
             return host;
         }
-
     }
 }

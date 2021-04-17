@@ -6,7 +6,7 @@ using Confluent.Kafka;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 
-namespace SeungYongShim.Kafka.DependencyInjection
+namespace SeungYongShim.Kafka
 {
     public class KafkaProducer : IDisposable
     {

@@ -6,15 +6,18 @@ using System.Text;
 using System.Threading;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using SeungYongShim.Kafka.DependencyInjection.Abstractions;
+using SeungYongShim.Kafka.Abstractions;
 
-namespace SeungYongShim.Kafka.DependencyInjection
+namespace SeungYongShim.Kafka
 {
     public class KafkaConsumer : IDisposable
     {
         private bool disposedValue;
 
-        public KafkaConsumer(ActivitySource activitySource, KafkaConfig kafkaConfig, KafkaProtobufMessageTypes kafkaConsumerMessageTypes, ILogger<KafkaConsumer> logger)
+        public KafkaConsumer(ActivitySource activitySource,
+                             KafkaConfig kafkaConfig,
+                             KafkaProtobufMessageTypes kafkaConsumerMessageTypes,
+                             ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
             Logger = logger;

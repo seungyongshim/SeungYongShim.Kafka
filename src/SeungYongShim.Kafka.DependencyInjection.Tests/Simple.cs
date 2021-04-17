@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using FluentAssertions;
 using FluentAssertions.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SeungYongShim.Kafka.DependencyInjection.Abstractions;
 using Xunit;
 
 namespace SeungYongShim.Kafka.DependencyInjection.Tests
@@ -71,6 +69,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                         channel.Writer.TryWrite(m.Body);
                         m.Commit();
                         break;
+
                     default:
                         throw new ApplicationException();
                 }
@@ -78,7 +77,6 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             await producer.SendAsync(new Sample
             {
-                
                 ID = "1"
             }.AddBody(new[] { "Hello", "World" }), topicName);
 
@@ -87,7 +85,6 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             value.Should().Be(new Sample
             {
-
                 ID = "1"
             }.AddBody(new[] { "Hello", "World" }));
 

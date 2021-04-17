@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Google.Protobuf;
 
-namespace SeungYongShim.Kafka.DependencyInjection
+namespace SeungYongShim.Kafka
 {
     public class KafkaProtobufMessageTypes
     {

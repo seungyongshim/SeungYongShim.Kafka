@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using SeungYongShim.Kafka.DependencyInjection;
+using SeungYongShim.Kafka;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
