@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using SeungYongShim.Kafka.Abstractions;
 
 namespace SeungYongShim.Kafka
 {
@@ -35,7 +34,7 @@ namespace SeungYongShim.Kafka
 
         public void Run(string groupId,
                         IList<string> topics,
-                        Action<ICommitable> callback)
+                        Action<Commitable> callback)
         {
             if (KafkaConsumerThread is not null) return;
 
@@ -77,7 +76,6 @@ namespace SeungYongShim.Kafka
                                 var messageType = KafkaConsumerMessageTypes.GetTypeAll[typeName];
                                 var parser = KafkaConsumerMessageTypes.GetParserAll[typeName];
                                 var o = parser.ParseJson(consumeResult.Message.Value);
-                                var type = typeof(Commitable<>).MakeGenericType(messageType);
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
                                 using var activity = ActivitySource?.StartActivity("KafkaConsumer", ActivityKind.Consumer, Encoding.Default.GetString(activityID));
@@ -98,9 +96,9 @@ namespace SeungYongShim.Kafka
                                     }
                                 };
 
-                                var message = Activator.CreateInstance(type, o, consumeResult.Message.Key, action);
+                                var message = new Commitable(o, consumeResult.Message.Key, action);
 
-                                callback?.Invoke(message as ICommitable);
+                                callback?.Invoke(message);
 
                                 slim.Wait(timeout, cancellationToken);
                                 slim.Reset();

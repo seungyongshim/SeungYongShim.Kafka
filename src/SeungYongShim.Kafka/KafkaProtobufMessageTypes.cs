@@ -11,7 +11,7 @@ namespace SeungYongShim.Kafka
     {
         public KafkaProtobufMessageTypes(IEnumerable<Type> types)
         {
-            GetTypeAll = (from t in types
+            GetTypeAll = (from t in types.Append(typeof(IMessage)) 
                           let assembly = Assembly.GetAssembly(t)
                           from type in assembly.GetTypes()
                           where typeof(IMessage).IsAssignableFrom(type)

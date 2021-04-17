@@ -6,6 +6,7 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using FluentAssertions;
 using FluentAssertions.Extensions;
+using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
@@ -59,13 +60,13 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             var consumer = host.Services.GetRequiredService<KafkaConsumer>();
             var producer = host.Services.GetRequiredService<KafkaProducer>();
 
-            var channel = Channel.CreateUnbounded<Sample>();
+            var channel = Channel.CreateUnbounded<IMessage>();
 
             consumer.Run(groupId, new[] { topicName }, comm =>
             {
                 switch (comm)
                 {
-                    case Commitable<Sample> m:
+                    case Commitable m:
                         channel.Writer.TryWrite(m.Body);
                         m.Commit();
                         break;

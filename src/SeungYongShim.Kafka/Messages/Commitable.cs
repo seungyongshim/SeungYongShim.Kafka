@@ -1,7 +1,7 @@
 using System;
-using SeungYongShim.Kafka.Abstractions;
+using Google.Protobuf;
 
 namespace SeungYongShim.Kafka
 {
-    public record Commitable<T>(T Body, string Key, Action Commit) : ICommitable;
+    public record Commitable(IMessage Body, string Key, Action Commit);
 }
