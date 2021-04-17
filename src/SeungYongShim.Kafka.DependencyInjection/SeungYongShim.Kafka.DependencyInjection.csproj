@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../common.props" />
   <PropertyGroup>
     <TargetFramework>net5</TargetFramework>
@@ -10,10 +10,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\SeungYongShim.Kafka.DependencyInjection.Abstractions\SeungYongShim.Kafka.DependencyInjection.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

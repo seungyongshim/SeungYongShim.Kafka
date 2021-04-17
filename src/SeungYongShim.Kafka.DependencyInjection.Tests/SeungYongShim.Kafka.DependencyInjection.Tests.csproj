@@ -27,7 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SeungYongShim.Kafka.DependencyInjection.Abstractions\SeungYongShim.Kafka.DependencyInjection.Abstractions.csproj" />
     <ProjectReference Include="..\SeungYongShim.Kafka.DependencyInjection\SeungYongShim.Kafka.DependencyInjection.csproj" />
   </ItemGroup>
 

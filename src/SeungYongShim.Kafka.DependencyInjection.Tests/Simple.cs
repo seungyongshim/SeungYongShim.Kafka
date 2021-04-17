@@ -69,6 +69,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                 {
                     case Commitable<Sample> m:
                         channel.Writer.TryWrite(m.Body);
+                        m.Commit();
                         break;
                     default:
                         throw new ApplicationException();
