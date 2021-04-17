@@ -31,14 +31,16 @@ jobs:
       uses: seungyongshim/get-version-action@v1.3
     - name: Modification Version
       run: |
-        cd src/Mirero.Akka.Extensions.DependencyInjection
-        sed -i "s/<Version>0.0.0.000/<Version>${{ steps.get_version.outputs.version }}/g" ./Mirero.Akka.Extensions.DependencyInjection.csproj
-        cat ./Mirero.Akka.Extensions.DependencyInjection.csproj
-    - name: Publish NuGet
+        cd src
+        sed -i "s/<Version>0.0.0.000/<Version>${{ steps.get_version.outputs.version }}/g" ./common.props
+        cat ./common.props
+    - name: Publish NuGet 
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
         # Filepath of the project to be packaged, relative to root of repository
-        PROJECT_FILE_PATH:  src/Mirero.Akka.Extensions.DependencyInjection/Mirero.Akka.Extensions.DependencyInjection.csproj
+        PROJECT_FILE_PATH:  src/SeungYongShim.OpenTelemetry.Akka/SeungYongShim.OpenTelemetry.Akka.csproj
+        VERSION_FILE_PATH: src/common.props
         NUGET_KEY: ${{ secrets.api }}
         INCLUDE_SYMBOLS: true
+        TAG_COMMIT: false
         TAG_COMMIT: false
