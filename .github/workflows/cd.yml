@@ -37,7 +37,7 @@ jobs:
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
         # Filepath of the project to be packaged, relative to root of repository
-        PROJECT_FILE_PATH:  src/SeungYongShim.Kafka.DependencyInjection/SeungYongShim.Kafka.csproj
+        PROJECT_FILE_PATH:  src/SeungYongShim.Kafka/SeungYongShim.Kafka.csproj
         VERSION_FILE_PATH: src/common.props
         NUGET_KEY: ${{ secrets.api }}
         INCLUDE_SYMBOLS: true
