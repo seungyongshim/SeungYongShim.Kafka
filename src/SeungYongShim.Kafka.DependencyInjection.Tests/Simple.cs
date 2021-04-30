@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -6,9 +7,9 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using FluentAssertions;
 using FluentAssertions.Extensions;
-using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
 using Xunit;
 
 namespace SeungYongShim.Kafka.DependencyInjection.Tests
@@ -16,7 +17,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
     public class KafkaSpec
     {
         [Fact]
-        public async Task Simple()
+        public async void Simple()
         {
             var bootstrapServers = "localhost:9092";
             var topicName = "kafka.spec.simple.test";
@@ -25,6 +26,19 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             using var host =
                 Host.CreateDefaultBuilder()
                     .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)), typeof(Sample))
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton(new ActivitySource("OnActivity"));
+                        services.AddOpenTelemetryTracing(builder =>
+                        {
+                            builder.AddSource("OnActivity")
+                                   .AddSource("SeungYongShim.Akka.OpenTelemetry")
+                                   .SetSampler(new AlwaysOnSampler())
+                                   .AddZipkinExporter();
+                                   //.AddInMemoryExporter(memoryExport));
+                        });
+                                   
+                    })
                     .Build();
 
             await host.StartAsync();
@@ -60,17 +74,16 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             var consumer = host.Services.GetRequiredService<KafkaConsumer>();
             var producer = host.Services.GetRequiredService<KafkaProducer>();
 
-            var channel = Channel.CreateUnbounded<IMessage>();
+            var channel = Channel.CreateUnbounded<Sample>();
 
             consumer.Run(groupId, new[] { topicName }, comm =>
             {
                 switch (comm)
                 {
                     case Commitable m:
-                        channel.Writer.TryWrite(m.Body);
                         m.Commit();
+                        channel.Writer.TryWrite(m.Body as Sample);
                         break;
-
                     default:
                         throw new ApplicationException();
                 }
@@ -78,6 +91,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             await producer.SendAsync(new Sample
             {
+                
                 ID = "1"
             }.AddBody(new[] { "Hello", "World" }), topicName);
 
@@ -86,6 +100,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             value.Should().Be(new Sample
             {
+
                 ID = "1"
             }.AddBody(new[] { "Hello", "World" }));
 

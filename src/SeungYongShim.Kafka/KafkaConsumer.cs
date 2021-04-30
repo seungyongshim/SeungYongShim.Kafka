@@ -78,8 +78,7 @@ namespace SeungYongShim.Kafka
                                 var o = parser.ParseJson(consumeResult.Message.Value);
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
-                                using var activity = ActivitySource?.StartActivity("KafkaConsumer", ActivityKind.Consumer, Encoding.Default.GetString(activityID));
-
+                                
                                 Action action = () =>
                                 {
                                     try
@@ -98,7 +97,10 @@ namespace SeungYongShim.Kafka
 
                                 var message = new Commitable(o, consumeResult.Message.Key, action);
 
-                                callback?.Invoke(message);
+                                using (var activity = ActivitySource?.StartActivity("KafkaConsumer", ActivityKind.Consumer, Encoding.Default.GetString(activityID)))
+                                {
+                                    callback?.Invoke(message);
+                                }
 
                                 slim.Wait(timeout, cancellationToken);
                                 slim.Reset();
