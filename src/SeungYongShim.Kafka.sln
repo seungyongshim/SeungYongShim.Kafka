@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		common.props = common.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeungYongShim.Kafka", "SeungYongShim.Kafka\SeungYongShim.Kafka.csproj", "{4CDF2B15-710D-49A7-8D10-F3FD4E71B8AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SeungYongShim.Kafka", "SeungYongShim.Kafka\SeungYongShim.Kafka.csproj", "{4CDF2B15-710D-49A7-8D10-F3FD4E71B8AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

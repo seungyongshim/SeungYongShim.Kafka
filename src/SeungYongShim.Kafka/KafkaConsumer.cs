@@ -72,6 +72,8 @@ namespace SeungYongShim.Kafka
                             {
                                 var consumeResult = consumer.Consume(KafkaConfig.TimeOut);
 
+                                if (consumeResult is null) continue; // 이유를 현재 모르겠음
+
                                 if (consumeResult.IsPartitionEOF) continue;
 
                                 var clrType = consumeResult.Message.Headers.First(x => x.Key is "ClrType").GetValueBytes();
@@ -86,8 +88,7 @@ namespace SeungYongShim.Kafka
 
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
-                                using var activity = ActivitySource?.StartActivity("KafkaConsumer", ActivityKind.Consumer, Encoding.Default.GetString(activityID));
-
+                                
                                 Action action = () =>
                                 {
                                     try
@@ -106,7 +107,10 @@ namespace SeungYongShim.Kafka
 
                                 var message = new Commitable(o, consumeResult.Message.Key, action);
 
-                                callback?.Invoke(message);
+                                using (var activity = ActivitySource?.StartActivity("kafka consume", ActivityKind.Consumer, Encoding.Default.GetString(activityID)))
+                                {
+                                    callback?.Invoke(message);
+                                }
 
                                 slim.Wait(timeout, cancellationToken);
                                 slim.Reset();
@@ -114,6 +118,9 @@ namespace SeungYongShim.Kafka
                             catch (ConsumeException e)
                             {
                                 Logger.LogError(e, "Consume Error");
+                            }
+                            catch (TimeoutException)
+                            {
                             }
                         }
                     }
