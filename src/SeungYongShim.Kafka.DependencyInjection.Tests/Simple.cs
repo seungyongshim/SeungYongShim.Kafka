@@ -33,9 +33,9 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                         {
                             builder.AddSource("OnActivity")
                                    .AddSource("SeungYongShim.Akka.OpenTelemetry")
-                                   .SetSampler(new AlwaysOnSampler())
-                                   .AddZipkinExporter();
-                                   //.AddInMemoryExporter(memoryExport));
+                                   .AddZipkinExporter()
+                                   .AddOtlpExporter()
+                                   .SetSampler(new AlwaysOnSampler());
                         });
                                    
                     })

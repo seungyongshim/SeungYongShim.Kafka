@@ -97,7 +97,7 @@ namespace SeungYongShim.Kafka
 
                                 var message = new Commitable(o, consumeResult.Message.Key, action);
 
-                                using (var activity = ActivitySource?.StartActivity("KafkaConsumer", ActivityKind.Consumer, Encoding.Default.GetString(activityID)))
+                                using (var activity = ActivitySource?.StartActivity("kafka consume", ActivityKind.Consumer, Encoding.Default.GetString(activityID)))
                                 {
                                     callback?.Invoke(message);
                                 }
@@ -108,6 +108,9 @@ namespace SeungYongShim.Kafka
                             catch (ConsumeException e)
                             {
                                 Logger.LogError(e, "Consume Error");
+                            }
+                            catch (TimeoutException)
+                            {
                             }
                         }
                     }
