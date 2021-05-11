@@ -69,6 +69,8 @@ namespace SeungYongShim.Kafka
                             {
                                 var consumeResult = consumer.Consume(KafkaConfig.TimeOut);
 
+                                if (consumeResult is null) continue; // 이유를 현재 모르겠음
+
                                 if (consumeResult.IsPartitionEOF) continue;
 
                                 var clrType = consumeResult.Message.Headers.First(x => x.Key is "ClrType").GetValueBytes();
