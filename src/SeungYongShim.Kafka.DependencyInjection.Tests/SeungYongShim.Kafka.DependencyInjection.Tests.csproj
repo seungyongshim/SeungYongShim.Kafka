@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="event.proto" />
     <None Remove="sample.proto" />
   </ItemGroup>
 
@@ -31,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Protobuf Include="event.proto" />
     <Protobuf Include="sample.proto" />
   </ItemGroup>
 

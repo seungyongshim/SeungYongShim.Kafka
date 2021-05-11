@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 
 namespace SeungYongShim.Kafka
 {
@@ -23,9 +24,22 @@ namespace SeungYongShim.Kafka
                                                        .GetGetMethod()?
                                                        .Invoke(null, null) as MessageParser))
                            .ToImmutableDictionary(x => x.FullName, x => x.Item2);
+
+            var descriptorAll = (from type in GetTypeAll.Values
+                                 select (type.GetProperty("Descriptor")
+                                             .GetGetMethod()?
+                                             .Invoke(null, null) as MessageDescriptor)).ToList();
+
+            
+
+            Registry = TypeRegistry.FromMessages(descriptorAll);
+            GetParser = new JsonParser(new JsonParser.Settings(20, Registry));
+            
         }
 
         public ImmutableDictionary<string, MessageParser> GetParserAll { get; }
         public ImmutableDictionary<string, Type> GetTypeAll { get; }
+        public TypeRegistry Registry { get; }
+        public JsonParser GetParser { get; }
     }
 }

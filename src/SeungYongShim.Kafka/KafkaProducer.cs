@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 
 namespace SeungYongShim.Kafka
@@ -33,7 +34,7 @@ namespace SeungYongShim.Kafka
             {
                 using var activity = ActivitySource.StartActivity("kafka", ActivityKind.Producer);
 
-                var message = JsonFormatter.ToDiagnosticString(m);
+                var message = JsonFormatter.ToDiagnosticString(Any.Pack(m));
 
                 var ret = await Producer.ProduceAsync(topic, new Message<string, string>
                 {
