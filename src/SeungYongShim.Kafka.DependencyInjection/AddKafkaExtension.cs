@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using SeungYongShim.Kafka;
+using SeungYongShim.ProtobufHelper;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -13,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(new ActivitySource("SeungYongShim.Kafka.DependencyInjection"));
             services.AddTransient<KafkaConsumer>();
             services.AddTransient<KafkaProducer>();
-            services.AddSingleton(sp => new KafkaProtobufMessageTypes(protobufMessageTypes));
+            services.AddSingleton(sp => new ProtoKnownTypes());
             services.AddSingleton(sp => kafkaConfig);
 
             return services;

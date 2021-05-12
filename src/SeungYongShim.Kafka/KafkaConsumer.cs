@@ -4,12 +4,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using Confluent.Kafka;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
+using SeungYongShim.ProtobufHelper;
 
 namespace SeungYongShim.Kafka
 {
@@ -19,25 +21,25 @@ namespace SeungYongShim.Kafka
 
         public KafkaConsumer(ActivitySource activitySource,
                              KafkaConfig kafkaConfig,
-                             KafkaProtobufMessageTypes kafkaConsumerMessageTypes,
+                             ProtoKnownTypes knownTypes,
                              ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
             Logger = logger;
             KafkaConfig = kafkaConfig;
-            KafkaConsumerMessageTypes = kafkaConsumerMessageTypes;
+            ProtoKnownTypes = knownTypes;
         }
 
         public ActivitySource ActivitySource { get; }
         public ILogger<KafkaConsumer> Logger { get; }
         public KafkaConfig KafkaConfig { get; }
-        public KafkaProtobufMessageTypes KafkaConsumerMessageTypes { get; }
+        public ProtoKnownTypes ProtoKnownTypes { get; }
 
         public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
         public Thread KafkaConsumerThread { get; private set; }
 
         public void Run(string groupId,
-                        IList<string> topics,
+                        IEnumerable<string> topics,
                         Action<Commitable> callback)
         {
             if (KafkaConsumerThread is not null) return;
@@ -77,33 +79,8 @@ namespace SeungYongShim.Kafka
 
                                 if (consumeResult.IsPartitionEOF) continue;
 
-                                //var clrType = consumeResult.Message.Headers.First(x => x.Key is "ClrType").GetValueBytes();
-                                //var typeName = Encoding.Default.GetString(clrType);
-                                //var messageType = KafkaConsumerMessageTypes.GetTypeAll[typeName];
-
-                                //var k = JsonSerializer.Deserialize(consumeResult.Message.Value, typeof(Any));
-
-
-                                //var parser = KafkaConsumerMessageTypes.GetParserAll[typeName];
-                                //var o = parser.ParseJson(consumeResult.Message.Value);
-
-                                // https://github.com/protocolbuffers/protobuf/issues/6562#issue-484758345
-
-
-                                var parser = KafkaConsumerMessageTypes.JsonParser;
-
-                                
-                                var o = parser.Parse<Any>(consumeResult.Message.Value);
-
-
-
-                                var a = new Any
-                                {
-                                    Value = ByteString.FromBase64()
-                                }
-
-                                //var o = Any.Parser.ParseJson(consumeResult.Message.Value);
-
+                                var anyJson = JsonSerializer.Deserialize<AnyJson>(consumeResult.Message.Value);
+                                var o = ProtoKnownTypes.Unpack(anyJson.ToAny());
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
                                 

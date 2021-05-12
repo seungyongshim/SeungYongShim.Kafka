@@ -10,6 +10,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SeungYongShim.ProtobufHelper;
 using Xunit;
 
 namespace SeungYongShim.Kafka.DependencyInjection.Tests
@@ -20,12 +21,12 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
         public async Task Event()
         {
             var bootstrapServers = "localhost:9092";
-            var topicName = "kafka.spec.simple.test";
+            var topicName = "kafka.spec.event.test";
             var groupId = "unittest";
             // arrange
             using var host =
                 Host.CreateDefaultBuilder()
-                    .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)), typeof(Sample), typeof(Event))
+                    .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)))
                     .Build();
 
             await host.StartAsync();
@@ -60,6 +61,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             var consumer = host.Services.GetRequiredService<KafkaConsumer>();
             var producer = host.Services.GetRequiredService<KafkaProducer>();
+            var knownTypes = host.Services.GetRequiredService<ProtoKnownTypes>();
 
             var channel = Channel.CreateUnbounded<IMessage>();
 
@@ -79,16 +81,22 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             await producer.SendAsync(new Event
             {
-                TraceId = "111"
+                TraceId = "111",
+                Body = Any.Pack(new Sample
+                {
+                    ID = "1"
+                }.AddBody(new[] { "Hello", "World" }))
             }, topicName);
 
             var cts = new CancellationTokenSource(15.Seconds());
-            var value = await channel.Reader.ReadAsync(cts.Token);
+            var value = await channel.Reader.ReadAsync(cts.Token) as Event;
 
-            value.Should().Be(new Event
+            var x = knownTypes.Unpack(value.Body);
+
+            x.Should().Be(new Sample
             {
-                TraceId = "111"
-            });
+                ID = "1"
+            }.Select(x => x.Body.Add(new[] { "Hello", "World" })));
 
             await host.StopAsync();
         }

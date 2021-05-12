@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../common.props" />
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -8,6 +8,7 @@
     <PackageReference Include="Confluent.Kafka" Version="1.6.3" />
     <PackageReference Include="Google.Protobuf" Version="3.16.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    <PackageReference Include="SeungYongShim.ProtobufHelper" Version="0.5.0" />
   </ItemGroup>
 
 </Project>
