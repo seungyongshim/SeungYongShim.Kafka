@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using Confluent.Kafka;
 using Google.Protobuf;
@@ -76,15 +77,32 @@ namespace SeungYongShim.Kafka
 
                                 if (consumeResult.IsPartitionEOF) continue;
 
-                                var clrType = consumeResult.Message.Headers.First(x => x.Key is "ClrType").GetValueBytes();
-                                var typeName = Encoding.Default.GetString(clrType);
-                                var messageType = KafkaConsumerMessageTypes.GetTypeAll[typeName];
+                                //var clrType = consumeResult.Message.Headers.First(x => x.Key is "ClrType").GetValueBytes();
+                                //var typeName = Encoding.Default.GetString(clrType);
+                                //var messageType = KafkaConsumerMessageTypes.GetTypeAll[typeName];
+
+                                //var k = JsonSerializer.Deserialize(consumeResult.Message.Value, typeof(Any));
+
+
                                 //var parser = KafkaConsumerMessageTypes.GetParserAll[typeName];
                                 //var o = parser.ParseJson(consumeResult.Message.Value);
 
                                 // https://github.com/protocolbuffers/protobuf/issues/6562#issue-484758345
-                                var parser = KafkaConsumerMessageTypes.GetParser;
+
+
+                                var parser = KafkaConsumerMessageTypes.JsonParser;
+
+                                
                                 var o = parser.Parse<Any>(consumeResult.Message.Value);
+
+
+
+                                var a = new Any
+                                {
+                                    Value = ByteString.FromBase64()
+                                }
+
+                                //var o = Any.Parser.ParseJson(consumeResult.Message.Value);
 
 
                                 var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();

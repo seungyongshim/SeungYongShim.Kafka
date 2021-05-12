@@ -37,8 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="event.proto" />
-    <Protobuf Include="sample.proto" />
+    <Protobuf Include="event.proto" GrpcServices="None" />
+    <Protobuf Include="sample.proto" GrpcServices="None" />
   </ItemGroup>
 
 </Project>

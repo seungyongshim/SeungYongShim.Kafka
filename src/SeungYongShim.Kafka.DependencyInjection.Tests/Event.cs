@@ -17,7 +17,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
     public class KafkaEventSpec
     {
         [Fact]
-        public async Task Simple()
+        public async Task Event()
         {
             var bootstrapServers = "localhost:9092";
             var topicName = "kafka.spec.simple.test";
@@ -79,11 +79,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             await producer.SendAsync(new Event
             {
-                TraceId = "111",
-                Body = Any.Pack(new Sample
-                {
-                    ID = "1"
-                }.AddBody(new[] { "Hello", "World" }))
+                TraceId = "111"
             }, topicName);
 
             var cts = new CancellationTokenSource(15.Seconds());
@@ -91,11 +87,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
 
             value.Should().Be(new Event
             {
-                TraceId = "111",
-                Body = Any.Pack(new Sample
-                {
-                    ID = "1"
-                }.AddBody(new[] { "Hello", "World" }))
+                TraceId = "111"
             });
 
             await host.StopAsync();

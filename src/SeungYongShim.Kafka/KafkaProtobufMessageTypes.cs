@@ -12,7 +12,7 @@ namespace SeungYongShim.Kafka
     {
         public KafkaProtobufMessageTypes(IEnumerable<Type> types)
         {
-            GetTypeAll = (from t in types.Append(typeof(IMessage)) 
+            GetTypeAll = (from t in types
                           let assembly = Assembly.GetAssembly(t)
                           from type in assembly.GetTypes()
                           where typeof(IMessage).IsAssignableFrom(type)
@@ -33,13 +33,17 @@ namespace SeungYongShim.Kafka
             
 
             Registry = TypeRegistry.FromMessages(descriptorAll);
-            GetParser = new JsonParser(new JsonParser.Settings(20, Registry));
-            
+            JsonParser = new JsonParser(JsonParser.Settings.Default.WithTypeRegistry(Registry));
+
+            JsonFormatter = new JsonFormatter(JsonFormatter.Settings.Default.WithTypeRegistry(Registry));
+                    
+
         }
 
         public ImmutableDictionary<string, MessageParser> GetParserAll { get; }
         public ImmutableDictionary<string, Type> GetTypeAll { get; }
         public TypeRegistry Registry { get; }
-        public JsonParser GetParser { get; }
+        public JsonParser JsonParser { get; }
+        public JsonFormatter JsonFormatter { get; }
     }
 }

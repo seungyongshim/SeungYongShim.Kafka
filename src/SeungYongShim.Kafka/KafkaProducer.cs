@@ -13,10 +13,14 @@ namespace SeungYongShim.Kafka
     {
         private bool disposedValue;
 
-        public KafkaProducer(ActivitySource activitySource, KafkaConfig kafkaConfig, ILogger<KafkaConsumer> logger)
+        public KafkaProducer(ActivitySource activitySource,
+                             KafkaConfig kafkaConfig,
+                             KafkaProtobufMessageTypes kafkaProtobufMessageTypes,
+                             ILogger<KafkaConsumer> logger)
         {
             ActivitySource = activitySource;
             KafkaConfig = kafkaConfig;
+            KafkaProtobufMessageTypes = kafkaProtobufMessageTypes;
             _log = logger;
 
             var config = new ProducerConfig
@@ -34,7 +38,7 @@ namespace SeungYongShim.Kafka
             {
                 using var activity = ActivitySource.StartActivity("kafka", ActivityKind.Producer);
 
-                var message = JsonFormatter.ToDiagnosticString(Any.Pack(m));
+                var message = KafkaProtobufMessageTypes.JsonFormatter.Format(Any.Pack(m));
 
                 var ret = await Producer.ProduceAsync(topic, new Message<string, string>
                 {
@@ -59,7 +63,7 @@ namespace SeungYongShim.Kafka
         private ILogger<KafkaConsumer> _log { get; }
 
         public KafkaConfig KafkaConfig { get; }
-
+        public KafkaProtobufMessageTypes KafkaProtobufMessageTypes { get; }
         private IProducer<string, string> Producer { get; }
 
         protected virtual void Dispose(bool disposing)
