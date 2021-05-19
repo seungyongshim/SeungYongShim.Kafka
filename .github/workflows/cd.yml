@@ -11,21 +11,27 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
-    - name: running kafka
+    - name: running infrastructure
       run: |
-        cd kafka
+        cd infrastructure
         docker-compose up -d
-        sleep 2s        
+        sleep 2s                    
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.101
+    - name: Install dependencies
+      run: |
+        cd src
+        dotnet restore
+    - name: Build
+      run: |
+        cd src
+        dotnet build --configuration Debug --no-restore
     - name: Test
       run: |
         cd src
-        dotnet clean 	        
-        dotnet restore	      
-        dotnet test
+        dotnet test 
     - id: get_version
       uses: seungyongshim/get-version-action@v1.3
     - name: Modification Version
@@ -33,21 +39,15 @@ jobs:
         cd src
         sed -i "s/<Version>9999.0.0.000/<Version>${{ steps.get_version.outputs.version }}/g" ./common.props
         cat ./common.props
-    - name: Publish NuGet (SeungYongShim.Kafka)
-      uses: brandedoutcast/publish-nuget@v2.5.5
-      with:
-        # Filepath of the project to be packaged, relative to root of repository
-        PROJECT_FILE_PATH:  src/SeungYongShim.Kafka/SeungYongShim.Kafka.csproj
-        VERSION_FILE_PATH: src/common.props
-        NUGET_KEY: ${{ secrets.api }}
-        INCLUDE_SYMBOLS: true
-        TAG_COMMIT: false
-    - name: Publish NuGet (SeungYongShim.Kafka.DependencyInjection)
-      uses: brandedoutcast/publish-nuget@v2.5.5
-      with:
-        # Filepath of the project to be packaged, relative to root of repository
-        PROJECT_FILE_PATH:  src/SeungYongShim.Kafka.DependencyInjection/SeungYongShim.Kafka.DependencyInjection.csproj
-        VERSION_FILE_PATH: src/common.props
-        NUGET_KEY: ${{ secrets.api }}
-        INCLUDE_SYMBOLS: true
-        TAG_COMMIT: false
+    - name: Generate NuGet packages
+      run: | 
+        cd src
+        dotnet pack -c Release -o nugets
+
+    - name: Push packages to registry
+      run: |
+        cd src/nugets
+        dotnet nuget push "*.nupkg" -k ${NUGET_API_KEY} -s https://api.nuget.org/v3/index.json --skip-duplicate
+      env:
+        NUGET_API_KEY: ${{ secrets.api }}
+  

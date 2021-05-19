@@ -4,12 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Channels;
 using Confluent.Kafka;
-using Google.Protobuf;
-using Google.Protobuf.Reflection;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using SeungYongShim.ProtobufHelper;
 
@@ -19,22 +16,18 @@ namespace SeungYongShim.Kafka
     {
         private bool disposedValue;
 
-        public KafkaConsumer(ActivitySource activitySource,
-                             KafkaConfig kafkaConfig,
+        public KafkaConsumer(KafkaConfig kafkaConfig,
                              ProtoKnownTypes knownTypes,
                              ILogger<KafkaConsumer> logger)
         {
-            ActivitySource = activitySource;
             Logger = logger;
             KafkaConfig = kafkaConfig;
             ProtoKnownTypes = knownTypes;
         }
 
-        public ActivitySource ActivitySource { get; }
         public ILogger<KafkaConsumer> Logger { get; }
         public KafkaConfig KafkaConfig { get; }
         public ProtoKnownTypes ProtoKnownTypes { get; }
-
         public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
         public Thread KafkaConsumerThread { get; private set; }
 
@@ -59,6 +52,8 @@ namespace SeungYongShim.Kafka
                 PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
 
+            
+
             KafkaConsumerThread = new Thread(() =>
             {
                 var slim = new ManualResetEventSlim();
@@ -82,8 +77,8 @@ namespace SeungYongShim.Kafka
                                 var anyJson = JsonSerializer.Deserialize<AnyJson>(consumeResult.Message.Value);
                                 var o = ProtoKnownTypes.Unpack(anyJson.ToAny());
 
-                                var activityID = consumeResult.Message.Headers.First(x => x.Key is "ActivityID").GetValueBytes();
-                                
+                                var activityId = consumeResult.Message.Headers.First(x => x.Key is "traceparent")?.GetValueBytes();
+
                                 Action action = () =>
                                 {
                                     try
@@ -102,7 +97,7 @@ namespace SeungYongShim.Kafka
 
                                 var message = new Commitable(o, consumeResult.Message.Key, action);
 
-                                using (var activity = ActivitySource?.StartActivity("kafka consume", ActivityKind.Consumer, Encoding.Default.GetString(activityID)))
+                                using (var activity = ActivitySourceStatic.Instance.StartActivity("kafka-consume", ActivityKind.Consumer, Encoding.Default.GetString(activityId)))
                                 {
                                     callback?.Invoke(message);
                                 }

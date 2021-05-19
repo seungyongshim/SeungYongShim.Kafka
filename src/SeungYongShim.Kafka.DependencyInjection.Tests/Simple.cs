@@ -25,14 +25,12 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             // arrange
             using var host =
                 Host.CreateDefaultBuilder()
-                    .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)), typeof(Sample))
+                    .UseKafka(new KafkaConfig(bootstrapServers, TimeSpan.FromSeconds(10)))
                     .ConfigureServices(services =>
                     {
-                        services.AddSingleton(new ActivitySource("OnActivity"));
                         services.AddOpenTelemetryTracing(builder =>
                         {
-                            builder.AddSource("OnActivity")
-                                   .AddSource("SeungYongShim.Akka.OpenTelemetry")
+                            builder.AddSource("SeungYongShim.OpenTelemetry")
                                    .AddZipkinExporter()
                                    .AddOtlpExporter()
                                    .SetSampler(new AlwaysOnSampler());

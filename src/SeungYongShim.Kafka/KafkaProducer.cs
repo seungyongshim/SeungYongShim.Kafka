@@ -6,16 +6,17 @@ using Confluent.Kafka;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Context.Propagation;
 
 namespace SeungYongShim.Kafka
 {
     public class KafkaProducer : IDisposable
     {
         private bool disposedValue;
+        private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
 
-        public KafkaProducer(ActivitySource activitySource, KafkaConfig kafkaConfig, ILogger<KafkaConsumer> logger)
+        public KafkaProducer(KafkaConfig kafkaConfig, ILogger<KafkaConsumer> logger)
         {
-            ActivitySource = activitySource;
             KafkaConfig = kafkaConfig;
             _log = logger;
 
@@ -32,16 +33,20 @@ namespace SeungYongShim.Kafka
         {
             try
             {
-                using var activity = ActivitySource.StartActivity("kafka", ActivityKind.Producer);
+                using var activity = ActivitySourceStatic.Instance.StartActivity("kafka", ActivityKind.Producer);
 
                 var message = JsonFormatter.ToDiagnosticString(Any.Pack(m));
+                var headers = new Headers()
+                {
+                    new Header("traceparent", Encoding.UTF8.GetBytes(activity?.Id ?? string.Empty))
+                };
 
                 var ret = await Producer.ProduceAsync(topic, new Message<string, string>
                 {
                     Key = key,
-                    Headers = new Headers { new Header("ActivityID", Encoding.UTF8.GetBytes(Activity.Current?.Id ?? string.Empty))},
+                    Headers = headers,
                     Value = message
-                });
+                }); ;
 
                 activity?.AddTag("topic", topic);
                 activity?.AddTag("message", message);
@@ -53,12 +58,8 @@ namespace SeungYongShim.Kafka
             }
         }
 
-        public ActivitySource ActivitySource { get; }
-
         private ILogger<KafkaConsumer> _log { get; }
-
         public KafkaConfig KafkaConfig { get; }
-
         private IProducer<string, string> Producer { get; }
 
         protected virtual void Dispose(bool disposing)
@@ -68,7 +69,6 @@ namespace SeungYongShim.Kafka
                 if (disposing)
                 {
                     Producer?.Dispose();
-
                 }
 
                 disposedValue = true;
