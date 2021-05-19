@@ -63,21 +63,7 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
             var producer = host.Services.GetRequiredService<KafkaProducer>();
             var knownTypes = host.Services.GetRequiredService<ProtoKnownTypes>();
 
-            var channel = Channel.CreateUnbounded<IMessage>();
-
-            consumer.Run(groupId, new[] { topicName }, comm =>
-            {
-                switch (comm)
-                {
-                    case Commitable m:
-                        channel.Writer.TryWrite(m.Body);
-                        m.Commit();
-                        break;
-
-                    default:
-                        throw new ApplicationException();
-                }
-            });
+            consumer.Start(groupId, new[] { topicName });
 
             await producer.SendAsync(new Event
             {
@@ -88,15 +74,18 @@ namespace SeungYongShim.Kafka.DependencyInjection.Tests
                 }.AddBody(new[] { "Hello", "World" }))
             }, topicName);
 
-            var cts = new CancellationTokenSource(15.Seconds());
-            var value = await channel.Reader.ReadAsync(cts.Token) as Event;
+            var value = await consumer.ConsumeAsync(TimeSpan.FromSeconds(10));
 
-            var x = knownTypes.Unpack(value.Body);
+            var @event = value.Message as Event;
+
+            var x = knownTypes.Unpack(@event.Body);
 
             x.Should().Be(new Sample
             {
                 ID = "1"
             }.Select(x => x.Body.Add(new[] { "Hello", "World" })));
+
+            value.Commit();
 
             await host.StopAsync();
         }

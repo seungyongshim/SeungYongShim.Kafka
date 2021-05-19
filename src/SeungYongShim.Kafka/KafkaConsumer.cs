@@ -6,7 +6,9 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using Confluent.Kafka;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using SeungYongShim.ProtobufHelper;
 
@@ -23,17 +25,31 @@ namespace SeungYongShim.Kafka
             Logger = logger;
             KafkaConfig = kafkaConfig;
             ProtoKnownTypes = knownTypes;
+            ConsumeChannel = Channel.CreateBounded<(Headers, string, Action)>(10);
         }
 
         public ILogger<KafkaConsumer> Logger { get; }
         public KafkaConfig KafkaConfig { get; }
         public ProtoKnownTypes ProtoKnownTypes { get; }
+        public Channel<(Headers, string, Action)> ConsumeChannel { get; }
         public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
         public Thread KafkaConsumerThread { get; private set; }
 
-        public void Run(string groupId,
-                        IEnumerable<string> topics,
-                        Action<Commitable> callback)
+        public async Task<Commitable> ConsumeAsync(TimeSpan timeOut)
+        {
+            var cts = new CancellationTokenSource(timeOut);
+            var (headers, message, action) = await ConsumeChannel.Reader.ReadAsync(cts.Token);
+
+            var activityId = headers.First(x => x.Key is "traceparent")?.GetValueBytes();
+            var anyJson = JsonSerializer.Deserialize<AnyJson>(message);
+            var o = ProtoKnownTypes.Unpack(anyJson.ToAny());
+
+            using var activity = ActivitySourceStatic.Instance.StartActivity("kafka-consume", ActivityKind.Consumer, Encoding.Default.GetString(activityId));
+            return new Commitable(o, action);
+        }
+
+        public void Start(string groupId,
+                          IEnumerable<string> topics)
         {
             if (KafkaConsumerThread is not null) return;
 
@@ -52,77 +68,56 @@ namespace SeungYongShim.Kafka
                 PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
 
-            
 
-            KafkaConsumerThread = new Thread(() =>
+            KafkaConsumerThread = new Thread(async () =>
             {
-                var slim = new ManualResetEventSlim();
-
+                var token = CancellationTokenSource.Token;
                 using (var consumer = new ConsumerBuilder<string, string>(config).Build())
                 {
                     consumer.Subscribe(topics);
 
                     try
                     {
-                        while (!cancellationToken.IsCancellationRequested)
+                        while (true)
                         {
+                            token.ThrowIfCancellationRequested();
                             try
                             {
-                                var consumeResult = consumer.Consume(KafkaConfig.TimeOut);
+                                var cr = consumer.Consume(KafkaConfig.TimeOut);
 
-                                if (consumeResult is null) continue; // 이유를 현재 모르겠음
+                                if (cr is null) continue; // 이유를 현재 모르겠음
+                                if (cr.IsPartitionEOF) continue;
 
-                                if (consumeResult.IsPartitionEOF) continue;
-
-                                var anyJson = JsonSerializer.Deserialize<AnyJson>(consumeResult.Message.Value);
-                                var o = ProtoKnownTypes.Unpack(anyJson.ToAny());
-
-                                var activityId = consumeResult.Message.Headers.First(x => x.Key is "traceparent")?.GetValueBytes();
-
-                                Action action = () =>
-                                {
-                                    try
-                                    {
-                                        consumer.Commit(consumeResult);
-                                    }
-                                    catch (KafkaException e)
-                                    {
-                                        Logger.LogError($"Commit error: {e.Error.Reason}");
-                                    }
-                                    finally
-                                    {
-                                        slim.Set();
-                                    }
-                                };
-
-                                var message = new Commitable(o, consumeResult.Message.Key, action);
-
-                                using (var activity = ActivitySourceStatic.Instance.StartActivity("kafka-consume", ActivityKind.Consumer, Encoding.Default.GetString(activityId)))
-                                {
-                                    callback?.Invoke(message);
-                                }
-
-                                slim.Wait(timeout, cancellationToken);
-                                slim.Reset();
+                                await ConsumeChannel.Writer.WriteAsync((cr.Message.Headers,
+                                                                        cr.Message.Value,
+                                                                        () =>
+                                                                        {
+                                                                            try
+                                                                            {
+                                                                                consumer.Commit(cr);
+                                                                            }
+                                                                            catch (KafkaException e)
+                                                                            {
+                                                                                Logger.LogError($"Commit error: {e.Error.Reason}");
+                                                                            }
+                                                                        }));
                             }
-                            catch (ConsumeException e)
+                            catch (ConsumeException ex)
                             {
-                                Logger.LogError(e, "Consume Error");
-                            }
-                            catch (TimeoutException)
-                            {
+                                Logger.LogWarning(ex, "");
                             }
                         }
                     }
-                    catch (OperationCanceledException)
+                    catch (Exception ex)
                     {
-                        Logger.LogDebug("Closing consumer.");
+                        Logger.LogError(ex, "");
                     }
                     finally
                     {
                         consumer.Close();
-                        KafkaConsumerThread = null;
+                        ConsumeChannel.Writer.Complete();
                     }
+
                 }
             });
 
