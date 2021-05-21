@@ -110,12 +110,13 @@ namespace SeungYongShim.Kafka
                     }
                     catch (Exception ex)
                     {
+                        ConsumeChannel.Writer.TryComplete(ex);
                         Logger.LogError(ex, "");
                     }
                     finally
                     {
                         consumer.Close();
-                        ConsumeChannel.Writer.Complete();
+                        ConsumeChannel.Writer.TryComplete();
                     }
 
                 }

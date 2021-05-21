@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using SeungYongShim.Kafka;
 using SeungYongShim.ProtobufHelper;
 
@@ -9,12 +11,11 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         internal static IServiceCollection AddKafka(this IServiceCollection services,
                                                     KafkaConfig kafkaConfig,
-                                                    params Type[] protobufMessageTypes)
+                                                    IEnumerable<string> searchPatterns)
         {
-            services.AddSingleton(new ActivitySource("SeungYongShim.Kafka.DependencyInjection"));
             services.AddTransient<KafkaConsumer>();
             services.AddTransient<KafkaProducer>();
-            services.AddSingleton(sp => new ProtoKnownTypes());
+            services.AddSingleton(sp => new ProtoKnownTypes(searchPatterns.ToArray()));
             services.AddSingleton(sp => kafkaConfig);
 
             return services;
