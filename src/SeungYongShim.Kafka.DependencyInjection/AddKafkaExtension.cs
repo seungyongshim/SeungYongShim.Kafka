@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using SeungYongShim.Kafka;
 using SeungYongShim.ProtobufHelper;

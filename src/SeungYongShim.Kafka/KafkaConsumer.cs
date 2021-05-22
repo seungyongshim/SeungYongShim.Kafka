@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using SeungYongShim.ProtobufHelper;
 
@@ -45,7 +44,8 @@ namespace SeungYongShim.Kafka
             var o = ProtoKnownTypes.Unpack(anyJson.ToAny());
 
             using var activity = ActivitySourceStatic.Instance.StartActivity("kafka-consume", ActivityKind.Consumer, Encoding.Default.GetString(activityId));
-            return new Commitable(o, action);
+            
+            return new Commitable(o, action, activity.Id);
         }
 
         public void Start(string groupId,
@@ -67,7 +67,6 @@ namespace SeungYongShim.Kafka
                 EnablePartitionEof = true,
                 PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
-
 
             KafkaConsumerThread = new Thread(async () =>
             {
@@ -100,7 +99,8 @@ namespace SeungYongShim.Kafka
                                                                             {
                                                                                 Logger.LogError($"Commit error: {e.Error.Reason}");
                                                                             }
-                                                                        }));
+                                                                        }
+                                ));
                             }
                             catch (ConsumeException ex)
                             {
@@ -118,7 +118,6 @@ namespace SeungYongShim.Kafka
                         consumer.Close();
                         ConsumeChannel.Writer.TryComplete();
                     }
-
                 }
             });
 
