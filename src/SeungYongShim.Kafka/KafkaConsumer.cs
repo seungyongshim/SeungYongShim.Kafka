@@ -45,7 +45,7 @@ namespace SeungYongShim.Kafka
 
             using var activity = ActivitySourceStatic.Instance.StartActivity("kafka-consume", ActivityKind.Consumer, Encoding.Default.GetString(activityId));
             
-            return new Commitable(o, action, activity.Id);
+            return new Commitable(o, action, activity?.Id);
         }
 
         public void Start(string groupId,
